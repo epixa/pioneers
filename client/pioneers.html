@@ -1,0 +1,110 @@
+<head>
+  <title>pioneers</title>
+</head>
+
+<body>
+  {{loginButtons}} 
+  {{> index}}
+  {{> game}}
+</body>
+
+<template name="index">
+  {{#if notGame}}
+    <h1>Select a game:</h1>
+    <ul>
+    {{#each games}}
+      <li>{{> gameLink }}</li>
+    {{/each}}
+    </ul>
+
+    <div>
+      <button class="clear">Clear</button>
+    </div>
+  {{/if}}
+</template>
+
+<template name="gameLink">
+  <a class="game-link">{{ name }}</a>
+</template>
+
+<template name="game">
+  {{#if game}}
+    <div>
+      <h1>{{ game.name }}</h1>
+      <a class="go-home">&laquo; go home</a>
+      {{#if player}}<button class="leave-game">Leave game</button>{{/if}}
+      <div><button class="delete-game">Delete game</button></div>
+    </div>
+
+    <div class="board">
+      {{> board}}
+    </div>
+
+    <div class="players">
+      {{> players}}
+    </div>
+
+    {{> turn}}
+    {{> joingame}}
+  {{/if}}
+</template>
+
+<template name="joingame">
+  {{#if canJoinGame}}
+    Join Game? <button class="join-game">Yes</button> <button class="dont-join-game">Cancel</button>
+  {{/if}}
+</template>
+
+<template name="board">
+  {{#each tiles}}
+    <div class="tile {{ resource }}">{{resource}}: {{ number }}</div>
+  {{/each}}
+  {{#each settlements}}
+    <div class="{{ type }}"></div>
+  {{/each}}
+  {{#each roads}}
+    <div class="road"></div>
+  {{/each}}
+</template>
+
+<template name="players">
+  {{#unless game.started}}
+    <span>{{ players.count }} / 4</span>
+  {{/unless}}
+  <ul>
+    {{#each players}}
+      <li>{{ name }}</li>
+    {{/each}}
+  </ul>
+</template>
+
+<template name="turn">
+  {{#if myturn}}
+    <h4>It's your turn</h4>
+
+    {{#if canBuildCity}}
+      <div class="build-city"></div>
+    {{/if}}
+    {{#if canBuildSettlement}}
+      <div class="build-settlement"></div>
+    {{/if}}
+    {{#if canBuildRoad}}
+      <div class="build-road"></div>
+    {{/if}}
+    {{#if canPlayCard}}
+      <div class="play-card"></div>
+    {{/if}}
+    {{#if canTakeCard}}
+      <div class="take-card"></div>
+    {{/if}}
+
+    <div class="trade">
+      {{#if canTradeWithPlayer}}
+        <div class="with-player"></div>
+      {{/if}}
+      {{#if canTradeWithBank}}
+        <div class="with-bank"></div>
+      {{/if}}
+    </div>
+  {{/if}}
+</template>
