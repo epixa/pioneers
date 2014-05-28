@@ -2,31 +2,34 @@ Session.setDefault('player_id', null);
 Session.setDefault('game_id', null);
 
 
-var player = function(){
+var player = function() {
   if (Session.equals('game_id', null)) return;
   if (Meteor.userId() === null) return;
   return Players.findOne({user_id: Meteor.userId(), game_id: Session.get('game_id')});
 };
 
-var games = function(){
+var games = function() {
   return Games.find();
 };
 
-var game = function(){
+var game = function() {
   if (Session.equals('game_id', null)) return;
   return Games.findOne(Session.get('game_id'));
 };
 
-var players = function(){
+var players = function() {
   if (Session.equals('game_id', null)) return;
   return Players.find({game_id: Session.get('game_id')});
 };
 
-var spectators = function(){
+var spectators = function() {
   if (Session.equals('game_id', null)) return;
   return Spectators.find({game_id: Session.get('game_id')});
 };
 
+var myturn = function() {
+  return player() && game().current_player === player().id;
+};
 
 Template.index.games = games;
 Template.index.notGame = function(){
@@ -61,34 +64,82 @@ Template.game.events({
     });
     Games.remove(game()._id);
     Router.goto();
+  },
+  'click .build-city': function() {
+    // todo: prompt user to select which settlement they want to upgrade to a city before doing the following
+    [STONE, WHEAT].forEach(function(resource) {
+      player().resources[resource] -= CITY_COST[resource];
+    });
+  },
+  'click .build-settlement': function() {
+    // todo: prompt user to select where they want to build a settlement before doing the following
+    [BRICK, SHEEP, WHEAT, WOOD].forEach(function(resource) {
+      player().resources[resource] -= SETTLEMENT_COST[resource];
+    });
+  },
+  'click .build-road': function() {
+    // todo: prompt user to select where they want to build the road before doing the following
+    [BRICK, WOOD].forEach(function(resource) {
+      player().resources[resource] -= ROAD_COST[resource];
+    });
+  },
+  'click .play-card': function() {
+    console.log('play card');
+  },
+  'click .take-card': function() {
+    // todo: prompt user to confirm that they want to take a card before doing the following
+    [SHEEP, STONE, WHEAT].forEach(function(resource) {
+      player().resources[resource] -= CARD_COST[resource];
+    });
+  },
+  'click .trade .with-player': function() {
+    console.log('trade with player');
+  },
+  'click .trade .with-bank': function() {
+    console.log('trade with bank');
   }
 });
 
 Template.players.players = players;
 
 Template.turn.myturn = function() {
-  return player() && true;
+  return myturn();
 };
 Template.turn.canBuildCity = function() {
-  return true;
+  return myturn()
+      && player().resources[WHEAT] >= 3
+      && player().resources[STONE] >= 2;
 };
 Template.turn.canBuildSettlement = function() {
-  return true;
+  return myturn()
+      && player().resources[WOOD] >= 1
+      && player().resources[WHEAT] >= 1
+      && player().resources[SHEEP] >= 1
+      && player().resources[BRICK] >= 1;
 };
 Template.turn.canBuildRoad = function() {
-  return true;
+  return myturn()
+      && player().resources[WOOD] >= 1
+      && player().resources[BRICK] >= 1;
 };
 Template.turn.canPlayCard = function() {
-  return true;
+  return myturn() && player().cards.length;
 };
 Template.turn.canTakeCard = function() {
-  return true;
+  return myturn()
+      && player().resources[WHEAT] >= 3
+      && player().resources[SHEEP] >= 3
+      && player().resources[STONE] >= 2;
 };
 Template.turn.canTradeWithPlayer = function() {
-  return true;
+  return myturn();
 };
 Template.turn.canTradeWithBank = function() {
-  return true;
+  return myturn()
+      && (player().resources[WOOD] >= 4
+        || player().resources[WHEAT] >= 4
+        || player().resources[SHEEP] >= 4
+        || player().resources[BRICK] >= 4);
 };
 
 Template.board.tiles = function() {
@@ -103,7 +154,17 @@ Template.joingame.events({
     Players.insert({
       name: Meteor.user().username,
       game_id: Session.get('game_id'),
-      user_id: Meteor.userId()
+      user_id: Meteor.userId(),
+      cards: [],
+      resources: (function() {
+        var resources = {};
+        resources[BRICK] = 0;
+        resources[SHEEP] = 0;
+        resources[STONE] = 0;
+        resources[WHEAT] = 0;
+        resources[WOOD] = 0;
+        return resources;
+      })()
     })
   },
   'click .dont-join-game': function() {
